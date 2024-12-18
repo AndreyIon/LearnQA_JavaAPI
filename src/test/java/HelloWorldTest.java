@@ -1,5 +1,6 @@
 import io.restassured.RestAssured;
-import io.restassured.path.json.JsonPath;
+import io.restassured.http.Headers;
+import io.restassured.response.Response;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -9,22 +10,33 @@ public class HelloWorldTest {
 
   @Test
   public void testRestAssured(){
-    Map<String, String> params = new HashMap<>();
-    params.put("name", "John");
+    Map <String, String> data = new HashMap<>();
+    data.put("login", "secret_login2");
+    data.put("password", "secret_pass2");
 
-
-    JsonPath response = RestAssured
+    Response responseForGet = RestAssured
             .given()
-            .queryParams(params)
-            .get("https://playground.learnqa.ru/api/hello")
-            .jsonPath();
+            .body(data)
+            .when()
+            .post("https://playground.learnqa.ru/api/get_auth_cookie")
+            .andReturn();
 
-    String name = response.get("answer2");
-    if (name == null){
-      System.out.println("The key 'answer2' is absent");
-    } else {
-      System.out.println(name);
+    String responseCookie = responseForGet.getCookie("auth_cookie");
+
+    Map<String, String> cookies = new HashMap<>();
+    if (responseCookie != null){
+      cookies.put("auth_cookie", responseCookie);
     }
 
+
+    Response responseForCheck = RestAssured
+            .given()
+            .body(data)
+            .cookies(cookies)
+            .when()
+            .post("https://playground.learnqa.ru/api/check_auth_cookie")
+            .andReturn();
+
+    responseForCheck.print();
   }
 }
